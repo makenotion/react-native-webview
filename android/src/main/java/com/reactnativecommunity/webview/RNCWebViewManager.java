@@ -775,7 +775,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     private final Map<String, BlockingQueue<WebViewUrlSchemeResult>> requestQueueMap = new HashMap<>();
 
     // Eventually this should be configurable
-    private final long SHOULD_INTERCEPT_REQUEST_TIMEOUT_MS = 5000;
+    private final long SHOULD_INTERCEPT_REQUEST_TIMEOUT_MS = 120000;
 
     // Shared client for forwarding all of the requests for onUrlSchemeRequest.
     private OkHttpClient httpClient;
@@ -845,6 +845,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
             )
         );
 
+         // SHOULD_INTERCEPT_REQUEST_TIMEOUT_MS is set to be long in case the response is very slow
+         // but not infinite in the case where there is never a response, so we don't wait forever.
          WebViewUrlSchemeResult result = queue.poll(
                 SHOULD_INTERCEPT_REQUEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
