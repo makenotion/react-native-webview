@@ -31,11 +31,15 @@
   return self;
 }
 
+-(NSString *)identifierForSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
+  return [NSString stringWithFormat:@"%p", urlSchemeTask];
+}
+
 -(NSString *)setSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
   // Save the task in a NSMutableDictionary.
   // NSMutableDictionary is not thread safe, so only perform mutating
   // operations on it on the main thread.
-  NSString* requestId = [NSString stringWithFormat:@"%p", urlSchemeTask];
+  NSString* requestId = [self identifierForSchemeTask:urlSchemeTask];
   dispatch_async(dispatch_get_main_queue(), ^{
     [self.urlSchemeRequestTasks setObject:urlSchemeTask forKey:requestId];
   });
@@ -44,10 +48,11 @@
 }
 
 -(void)removeSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
-  NSString* requestId = [NSString stringWithFormat:@"%p", urlSchemeTask];
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self.urlSchemeRequestTasks removeObjectForKey:requestId];
-  });
+  if (urlSchemeTask) {
+     dispatch_async(dispatch_get_main_queue(), ^{
+      [self.urlSchemeRequestTasks removeObjectForKey:[self identifierForSchemeTask:urlSchemeTask]];
+    });
+  }
 }
 
 -(id <WKURLSchemeTask>)getSchemeTaskForID:(NSString *)requestID {
