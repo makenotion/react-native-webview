@@ -31,31 +31,25 @@
   return self;
 }
 
--(NSString *)identifierForSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
+-(NSString *)identifierForSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask API_AVAILABLE(ios(11.0)){
   return [NSString stringWithFormat:@"%p", urlSchemeTask];
 }
 
--(NSString *)setSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
+-(NSString *)setSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask API_AVAILABLE(ios(11.0)){
   // Save the task in a NSMutableDictionary.
   // NSMutableDictionary is not thread safe, so only perform mutating
   // operations on it on the main thread.
   NSString* requestId = [self identifierForSchemeTask:urlSchemeTask];
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self.urlSchemeRequestTasks setObject:urlSchemeTask forKey:requestId];
-  });
+  [self.urlSchemeRequestTasks setObject:urlSchemeTask forKey:requestId];
 
   return requestId;
 }
 
--(void)removeSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
-  if (urlSchemeTask) {
-     dispatch_async(dispatch_get_main_queue(), ^{
-      [self.urlSchemeRequestTasks removeObjectForKey:[self identifierForSchemeTask:urlSchemeTask]];
-    });
-  }
+-(void)removeSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask API_AVAILABLE(ios(11.0)){
+  [self.urlSchemeRequestTasks removeObjectForKey:[self identifierForSchemeTask:urlSchemeTask]];
 }
 
--(id <WKURLSchemeTask>)getSchemeTaskForID:(NSString *)requestID {
+-(id <WKURLSchemeTask>)getSchemeTaskForID:(NSString *)requestID API_AVAILABLE(ios(11.0)){
   return [self.urlSchemeRequestTasks objectForKey:requestID];
 }
 
@@ -68,7 +62,7 @@ completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler {
 }
 
 // Note: WebKit calls this on the main thread.
-- (void)webView:(WKWebView *)webView startURLSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
+- (void)webView:(WKWebView *)webView startURLSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask API_AVAILABLE(ios(11.0)){
 
   // Get request data. For whatever reason, the body data isnt available.
   // https://bugs.webkit.org/show_bug.cgi?id=180220
@@ -77,7 +71,7 @@ completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler {
   NSDictionary* headers = urlSchemeTask.request.allHTTPHeaderFields;
 
   // Save the scheme task in our dictionary
-  NSString* requestId = [self setSchemeTask: urlSchemeTask];
+  NSString* requestId = [self setSchemeTask:urlSchemeTask];
 
   // Package up all the information for the JS event.
   NSDictionary *req = @{
@@ -91,7 +85,7 @@ completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler {
   [self.delegate handleUrlSchemeRequest:req];
 }
 
-- (void)handleUrlSchemeResponse:(NSDictionary *)resp
+- (void)handleUrlSchemeResponse:(NSDictionary *)resp API_AVAILABLE(ios(11.0))
 {
   // Grab the task we want to complete.
   NSString *requestId = [resp objectForKey:@"requestId"];
@@ -124,6 +118,7 @@ completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler {
     }
 
     [urlSchemeTask didFinish];
+    [self removeSchemeTask:urlSchemeTask];
   } else if ([type isEqualToString:@"file"]) {
     NSString *url = [resp objectForKey:@"url"];
     NSString *file = [resp objectForKey:@"file"];
@@ -155,6 +150,7 @@ completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler {
         } else if (error) {
           [urlSchemeTask didFailWithError:error];
         }
+        [self removeSchemeTask:urlSchemeTask];
       });
     }];
 
@@ -195,6 +191,8 @@ completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler {
         } else if (error) {
           [urlSchemeTask didFailWithError:error];
         }
+
+        [self removeSchemeTask:urlSchemeTask];
       });
     }];
 
@@ -203,7 +201,7 @@ completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler {
 }
 
 // Note: WebKit calls this on the main thread.
-- (void)webView:(WKWebView *)webView stopURLSchemeTask:(id<WKURLSchemeTask>)urlSchemeTask {
+- (void)webView:(WKWebView *)webView stopURLSchemeTask:(id<WKURLSchemeTask>)urlSchemeTask API_AVAILABLE(ios(11.0)){
   [self removeSchemeTask:urlSchemeTask];
 }
 
